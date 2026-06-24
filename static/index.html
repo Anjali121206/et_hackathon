@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SentinelSafe — Multi-Agent Industrial Safety Intelligence Platform. Real-time compound risk detection for heavy industry.">
+    <title>SentinelSafe — Industrial Safety Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+    <!-- ─── Top Header Bar ─────────────────────────────────────────────── -->
+    <header id="header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M16 2L28 8V18C28 24.6274 22.6274 30 16 30C9.37258 30 4 24.6274 4 18V8L16 2Z" stroke="url(#shield-grad)" stroke-width="2" fill="none"/>
+                        <path d="M12 16L15 19L21 13" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="shield-grad" x1="4" y1="2" x2="28" y2="30">
+                                <stop stop-color="#00f0ff"/>
+                                <stop offset="1" stop-color="#7b61ff"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>SentinelSafe</h1>
+                    <span class="logo-subtitle">Multi-Agent Safety Intelligence</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="system-status" id="systemStatus">
+                <span class="status-dot online"></span>
+                <span>All Agents Operational</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-clock" id="headerClock">--:--:--</div>
+            <div class="header-badge">
+                <span class="badge-label">Platform</span>
+                <span class="badge-value">v1.0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ─── Main Dashboard Grid ────────────────────────────────────────── -->
+    <main id="dashboard">
+        <!-- ─── Stats Row ──────────────────────────────────────────────── -->
+        <section class="stats-row" id="statsRow">
+            <div class="stat-card" id="statZones">
+                <div class="stat-icon zones-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statZonesValue">6</span>
+                    <span class="stat-label">Active Zones</span>
+                </div>
+            </div>
+            <div class="stat-card" id="statPermits">
+                <div class="stat-icon permits-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statPermitsValue">0</span>
+                    <span class="stat-label">Active Permits</span>
+                </div>
+            </div>
+            <div class="stat-card" id="statViolations">
+                <div class="stat-icon violations-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statViolationsValue">0</span>
+                    <span class="stat-label">PPE Violations</span>
+                </div>
+            </div>
+            <div class="stat-card highlight" id="statDRI">
+                <div class="stat-icon dri-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-value" id="statDRIValue">0.00</span>
+                    <span class="stat-label">Peak DRI</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── Main Grid ──────────────────────────────────────────────── -->
+        <div class="dashboard-grid">
+            <!-- ─── Plant Layout / Zone Map ────────────────────────────── -->
+            <section class="card plant-layout-card" id="plantLayoutCard">
+                <div class="card-header">
+                    <h2>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                            <line x1="8" y1="2" x2="8" y2="18"/>
+                            <line x1="16" y1="6" x2="16" y2="22"/>
+                        </svg>
+                        Plant Safety Heatmap
+                    </h2>
+                    <span class="card-badge live">LIVE</span>
+                </div>
+                <div class="plant-layout" id="plantLayout">
+                    <!-- SVG Plant Map -->
+                    <svg id="plantSVG" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                            <linearGradient id="gridGrad" x1="0" y1="0" x2="800" y2="500" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#0d1b2a" />
+                                <stop offset="100%" stop-color="#0a0e17" />
+                            </linearGradient>
+                            <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a2332" stroke-width="0.5"/>
+                            </pattern>
+                        </defs>
+                        <!-- Background -->
+                        <rect width="800" height="500" fill="url(#gridGrad)"/>
+                        <rect width="800" height="500" fill="url(#gridPattern)"/>
+                        
+                        <!-- Plant boundary -->
+                        <rect x="30" y="30" width="740" height="440" rx="8" fill="none" stroke="#1e3a5f" stroke-width="1.5" stroke-dasharray="8,4"/>
+                        <text x="400" y="22" text-anchor="middle" fill="#3a5a7c" font-size="11" font-family="Inter">VISAKHAPATNAM STEEL PLANT — SAFETY OVERLAY</text>
+
+                        <!-- Zone: Coke Oven Battery #4 -->
+                        <g class="zone-group" id="zone-ZONE_COKE_OVEN_04" data-zone="ZONE_COKE_OVEN_04">
+                            <rect x="50" y="60" width="220" height="170" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
+                            <rect x="50" y="60" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
+                            <text x="160" y="79" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">COKE OVEN BATTERY #4</text>
+                            <!-- Equipment icons -->
+                            <rect x="70" y="110" width="40" height="50" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="125" y="100" width="35" height="60" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="175" y="115" width="45" height="45" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <circle cx="90" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
+                            <text x="90" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S1</text>
+                            <circle cx="160" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
+                            <text x="160" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S2</text>
+                            <!-- DRI Display -->
+                            <text x="240" y="220" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
+                            <text x="240" y="200" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
+                        </g>
+
+                        <!-- Zone: Blast Furnace #2 -->
+                        <g class="zone-group" id="zone-ZONE_BF_02" data-zone="ZONE_BF_02">
+                            <rect x="290" y="60" width="220" height="170" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
+                            <rect x="290" y="60" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
+                            <text x="400" y="79" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">BLAST FURNACE #2</text>
+                            <circle x="320" cy="150" r="30" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1" cx="370"/>
+                            <circle cx="440" cy="150" r="25" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1"/>
+                            <circle cx="330" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
+                            <text x="330" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S3</text>
+                            <text x="480" y="220" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
+                            <text x="480" y="200" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
+                        </g>
+
+                        <!-- Zone: Steel Melting Shop #1 -->
+                        <g class="zone-group" id="zone-ZONE_SMS_01" data-zone="ZONE_SMS_01">
+                            <rect x="530" y="60" width="230" height="170" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
+                            <rect x="530" y="60" width="230" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
+                            <text x="645" y="79" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">STEEL MELTING SHOP #1</text>
+                            <rect x="555" y="110" width="60" height="40" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="635" y="105" width="50" height="50" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="700" y="115" width="40" height="35" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <circle cx="580" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
+                            <text x="580" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S4</text>
+                            <text x="730" y="220" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
+                            <text x="730" y="200" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
+                        </g>
+
+                        <!-- Zone: Rolling Mill #3 -->
+                        <g class="zone-group" id="zone-ZONE_ROLLING_03" data-zone="ZONE_ROLLING_03">
+                            <rect x="50" y="260" width="220" height="190" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
+                            <rect x="50" y="260" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
+                            <text x="160" y="279" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">ROLLING MILL #3</text>
+                            <rect x="70" y="310" width="180" height="20" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="70" y="340" width="180" height="20" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="70" y="370" width="180" height="20" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <circle cx="90" cy="420" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
+                            <text x="90" y="424" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S5</text>
+                            <text x="240" y="430" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
+                            <text x="240" y="410" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
+                        </g>
+
+                        <!-- Zone: Gas Holder Station -->
+                        <g class="zone-group" id="zone-ZONE_GAS_HOLDER" data-zone="ZONE_GAS_HOLDER">
+                            <rect x="290" y="260" width="220" height="190" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
+                            <rect x="290" y="260" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
+                            <text x="400" y="279" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">GAS HOLDER STATION</text>
+                            <circle cx="360" cy="360" r="40" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1"/>
+                            <circle cx="440" cy="370" r="30" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1"/>
+                            <circle cx="330" cy="420" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
+                            <text x="330" y="424" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S6</text>
+                            <text x="480" y="430" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
+                            <text x="480" y="410" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
+                        </g>
+
+                        <!-- Zone: Captive Power Plant -->
+                        <g class="zone-group" id="zone-ZONE_POWER_PLANT" data-zone="ZONE_POWER_PLANT">
+                            <rect x="530" y="260" width="230" height="190" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
+                            <rect x="530" y="260" width="230" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
+                            <text x="645" y="279" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">CAPTIVE POWER PLANT</text>
+                            <rect x="555" y="310" width="30" height="80" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="600" y="320" width="30" height="70" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="645" y="315" width="30" height="75" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <rect x="690" y="325" width="30" height="65" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
+                            <circle cx="580" cy="420" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
+                            <text x="580" y="424" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S7</text>
+                            <text x="730" y="430" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
+                            <text x="730" y="410" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
+                        </g>
+                    </svg>
+                </div>
+            </section>
+
+            <!-- ─── Right Column ───────────────────────────────────────── -->
+            <div class="right-column">
+                <!-- DRI Gauge -->
+                <section class="card dri-gauge-card" id="driGaugeCard">
+                    <div class="card-header">
+                        <h2>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 8v4l3 3"/>
+                            </svg>
+                            Dynamic Risk Index
+                        </h2>
+                        <span class="card-badge" id="driLevelBadge">NORMAL</span>
+                    </div>
+                    <div class="dri-gauge-container">
+                        <canvas id="driGaugeCanvas" width="280" height="180"></canvas>
+                        <div class="dri-value-display">
+                            <span class="dri-main-value" id="driMainValue">0.00</span>
+                            <span class="dri-sub-label">Compound Risk Score</span>
+                        </div>
+                    </div>
+                    <div class="dri-factors">
+                        <div class="dri-factor">
+                            <div class="factor-bar-track">
+                                <div class="factor-bar" id="factorBarTelemetry" style="width:0%"></div>
+                            </div>
+                            <span class="factor-label">Telemetry</span>
+                            <span class="factor-value" id="factorTelemetryVal">0.00</span>
+                        </div>
+                        <div class="dri-factor">
+                            <div class="factor-bar-track">
+                                <div class="factor-bar permit-bar" id="factorBarPermit" style="width:0%"></div>
+                            </div>
+                            <span class="factor-label">Permits</span>
+                            <span class="factor-value" id="factorPermitVal">0.00</span>
+                        </div>
+                        <div class="dri-factor">
+                            <div class="factor-bar-track">
+                                <div class="factor-bar vision-bar" id="factorBarVision" style="width:0%"></div>
+                            </div>
+                            <span class="factor-label">Vision</span>
+                            <span class="factor-value" id="factorVisionVal">0.00</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Agent Pipeline -->
+                <section class="card agent-card" id="agentCard">
+                    <div class="card-header">
+                        <h2>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            Agent Pipeline
+                        </h2>
+                    </div>
+                    <div class="agent-pipeline" id="agentPipeline">
+                        <div class="agent-node" id="agentTelemetry" data-agent="telemetry">
+                            <div class="agent-dot"></div>
+                            <span>Telemetry</span>
+                        </div>
+                        <div class="agent-connector"></div>
+                        <div class="agent-node" id="agentPermit" data-agent="permit">
+                            <div class="agent-dot"></div>
+                            <span>Permits</span>
+                        </div>
+                        <div class="agent-connector"></div>
+                        <div class="agent-node" id="agentVision" data-agent="vision">
+                            <div class="agent-dot"></div>
+                            <span>Vision</span>
+                        </div>
+                        <div class="agent-connector"></div>
+                        <div class="agent-node decision" id="agentDecision" data-agent="decision">
+                            <div class="agent-dot"></div>
+                            <span>Decision</span>
+                        </div>
+                    </div>
+                    <div class="agent-action-display" id="agentActionDisplay">
+                        <span class="action-label">Action:</span>
+                        <span class="action-text" id="actionText">CONTINUOUS_MONITORING</span>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ─── Bottom Section: Timeline + Simulation Controls ─────────── -->
+        <div class="bottom-grid">
+            <!-- Event Timeline -->
+            <section class="card timeline-card" id="timelineCard">
+                <div class="card-header">
+                    <h2>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                        </svg>
+                        Safety Event Timeline
+                    </h2>
+                    <span class="event-count" id="eventCount">0 events</span>
+                </div>
+                <div class="timeline-list" id="timelineList">
+                    <div class="timeline-empty">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2a3a4a" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" y1="8" x2="12" y2="12"/>
+                            <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                        <p>No safety events recorded yet.</p>
+                        <p class="timeline-hint">Run the simulation to see real-time events.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Simulation Controls -->
+            <section class="card simulation-card" id="simulationCard">
+                <div class="card-header">
+                    <h2>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Simulation Control
+                    </h2>
+                </div>
+                <div class="simulation-body">
+                    <p class="sim-description">Run a multi-step compound risk scenario simulating the Visakhapatnam Steel Plant incident pattern.</p>
+                    <div class="sim-steps">
+                        <div class="sim-step" id="simStep1">
+                            <span class="sim-step-num">1</span>
+                            <span class="sim-step-text">Baseline SCADA telemetry (normal)</span>
+                            <span class="sim-step-status" id="simStep1Status">⏳</span>
+                        </div>
+                        <div class="sim-step" id="simStep2">
+                            <span class="sim-step-num">2</span>
+                            <span class="sim-step-text">Register Hot Work Permit</span>
+                            <span class="sim-step-status" id="simStep2Status">⏳</span>
+                        </div>
+                        <div class="sim-step" id="simStep3">
+                            <span class="sim-step-num">3</span>
+                            <span class="sim-step-text">Gas accumulation (12% LEL)</span>
+                            <span class="sim-step-status" id="simStep3Status">⏳</span>
+                        </div>
+                        <div class="sim-step" id="simStep4">
+                            <span class="sim-step-num">4</span>
+                            <span class="sim-step-text">PPE violation detected by CCTV</span>
+                            <span class="sim-step-status" id="simStep4Status">⏳</span>
+                        </div>
+                        <div class="sim-step" id="simStep5">
+                            <span class="sim-step-num">5</span>
+                            <span class="sim-step-text">Final compound risk evaluation</span>
+                            <span class="sim-step-status" id="simStep5Status">⏳</span>
+                        </div>
+                    </div>
+                    <button class="sim-button" id="runSimulationBtn" onclick="runSimulation()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Run Compound Risk Simulation
+                    </button>
+                    <button class="sim-button reset-btn" id="resetSimulationBtn" onclick="resetSimulation()" style="display:none;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                        Reset Simulation
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ─── Emergency Overlay ──────────────────────────────────────────── -->
+    <div class="emergency-overlay" id="emergencyOverlay">
+        <div class="emergency-content">
+            <div class="emergency-icon">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#ff0040" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <h2>⚠️ EMERGENCY PROTOCOL TRIGGERED</h2>
+            <p class="emergency-zone" id="emergencyZone">ZONE_COKE_OVEN_04</p>
+            <p class="emergency-dri" id="emergencyDRI">DRI: 0.00</p>
+            <p class="emergency-action">TRIGGER_EMERGENCY_EVACUATION_AND_SHUTDOWN</p>
+            <div class="emergency-details">
+                <p>• Evacuation alarm activated for all personnel</p>
+                <p>• Emergency response teams dispatched</p>
+                <p>• SCADA shutdown sequence initiated</p>
+                <p>• Regulatory incident report auto-generated</p>
+            </div>
+            <button class="emergency-dismiss" onclick="dismissEmergency()">Acknowledge & Continue Monitoring</button>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
