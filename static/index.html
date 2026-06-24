@@ -283,6 +283,23 @@
                             <span class="factor-value" id="factorVisionVal">0.00</span>
                         </div>
                     </div>
+                    <!-- Predictive Forecast Panel -->
+                    <div class="predictive-panel" id="predictivePanel">
+                        <div class="predictive-header">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                            </svg>
+                            Predictive AI Forecast
+                        </div>
+                        <div class="predictive-stats">
+                            <span>DRI Trend Rate:</span>
+                            <span class="predictive-val" id="driTrendRate">+0.00 / hr</span>
+                        </div>
+                        <canvas id="driSparklineCanvas" width="180" height="30" style="width: 100%; height: 30px; margin-top: 4px;"></canvas>
+                        <div class="predictive-critical-time" id="timeToCritical">
+                            Est. Time to Critical: -- mins
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Agent Pipeline -->
@@ -317,9 +334,10 @@
                             <span>Decision</span>
                         </div>
                     </div>
-                    <div class="agent-action-display" id="agentActionDisplay">
-                        <span class="action-label">Action:</span>
-                        <span class="action-text" id="actionText">CONTINUOUS_MONITORING</span>
+                    <!-- Agent Reasoning Terminal -->
+                    <div class="agent-terminal" id="agentTerminal">
+                        <!-- Terminal lines will be injected here via JS -->
+                        <div class="terminal-line"><span class="timestamp">[SYSTEM]</span> Agent pipeline initialized. Monitoring active.</div>
                     </div>
                 </section>
             </div>

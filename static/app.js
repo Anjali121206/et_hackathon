@@ -21,6 +21,8 @@ const state = {
     gaugeAnimFrame: null,
     currentGaugeDRI: 0,
     targetGaugeDRI: 0,
+    driHistory: [],
+    lastTerminalMsg: ''
 };
 
 const ZONE_IDS = [
@@ -236,11 +238,21 @@ function refreshZoneMap() {
             titleText.setAttribute('fill', color);
         }
 
-        // Update sensor dots
-        const sensorCircles = group.querySelectorAll('circle');
+        // Update sensor dots (excluding workers)
+        const sensorCircles = group.querySelectorAll('circle:not(.worker-dot)');
         sensorCircles.forEach(c => {
             c.setAttribute('fill', hexToRgba(color, 0.2));
             c.setAttribute('stroke', color);
+        });
+
+        // Update workers
+        const workers = group.querySelectorAll('.worker-dot');
+        workers.forEach(w => {
+            if (riskLevel === 'CRITICAL' || riskLevel === 'HIGH') {
+                w.setAttribute('class', 'worker-dot danger');
+            } else {
+                w.setAttribute('class', 'worker-dot safe');
+            }
         });
     });
 
@@ -317,6 +329,69 @@ function refreshDRIGauge() {
         updateFactorBar('factorBarTelemetry', 'factorTelemetryVal', peakZoneData.telemetry_risk || 0);
         updateFactorBar('factorBarPermit', 'factorPermitVal', peakZoneData.permit_factor || 0);
         updateFactorBar('factorBarVision', 'factorVisionVal', peakZoneData.vision_factor || 0);
+    }
+
+    // Predictive Forecast Logic
+    const now = Date.now();
+    state.driHistory.push({ t: now, v: dri });
+    // Keep last 10 seconds of history
+    state.driHistory = state.driHistory.filter(h => now - h.t <= 10000);
+
+    const trendEl = document.getElementById('driTrendRate');
+    const critEl = document.getElementById('timeToCritical');
+
+    if (state.driHistory.length >= 2) {
+        const first = state.driHistory[0];
+        const last = state.driHistory[state.driHistory.length - 1];
+        const dt = (last.t - first.t) / 1000; // seconds
+        if (dt > 0) {
+            const dv = last.v - first.v;
+            const ratePerSec = dv / dt;
+            const ratePerHr = ratePerSec * 3600;
+            
+            trendEl.textContent = `${ratePerHr > 0 ? '+' : ''}${ratePerHr.toFixed(2)} / hr`;
+            trendEl.style.color = ratePerHr > 0 ? 'var(--neon-amber)' : 'var(--neon-green)';
+
+            if (ratePerSec > 0 && dri < 0.85) {
+                const timeToCrit = (0.85 - dri) / ratePerSec; // seconds
+                const mins = Math.ceil(timeToCrit / 60);
+                critEl.textContent = `Est. Time to Critical: ${mins} min${mins !== 1 ? 's' : ''}`;
+                critEl.classList.add('active');
+            } else {
+                critEl.classList.remove('active');
+            }
+        }
+    }
+
+    // Draw sparkline
+    const canvas = document.getElementById('driSparklineCanvas');
+    if (canvas && state.driHistory.length > 1) {
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        
+        const firstT = state.driHistory[0].t;
+        const lastT = state.driHistory[state.driHistory.length - 1].t;
+        const dt = lastT - firstT;
+        
+        ctx.beginPath();
+        for (let i = 0; i < state.driHistory.length; i++) {
+            const pt = state.driHistory[i];
+            const x = dt > 0 ? ((pt.t - firstT) / dt) * w : w;
+            const y = h - (pt.v * h); // Map 0-1 to h-0
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Fill under line
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
+        ctx.fill();
     }
 }
 
@@ -494,13 +569,21 @@ function refreshAgentPipeline() {
         }
     });
 
-    // Update action display
-    const actionText = document.getElementById('actionText');
-    if (actionText) {
-        actionText.textContent = action;
-        actionText.className = 'action-text';
-        if (isCritical) actionText.classList.add('critical-action');
-        else if (riskLevel === 'HIGH') actionText.classList.add('high-action');
+    // Update action display (Terminal)
+    if (peakZoneData) {
+        if (peakZoneData.telemetry_risk > 0.3) {
+            addTerminalLine('telemetry', 'Telemetry Agent', `Anomalous readings detected in ${state.peakZone}. Risk: ${peakZoneData.telemetry_risk.toFixed(2)}`);
+        }
+        if (peakZoneData.permit_factor > 0.2) {
+            addTerminalLine('permit', 'Permit Agent', `Active Hot Work Permit found in vicinity. Escalating risk.`);
+        }
+        if (peakZoneData.vision_factor > 0.2) {
+            addTerminalLine('vision', 'Vision Agent', `PPE Violations observed in zone. Workers at risk.`);
+        }
+        
+        if (action !== 'CONTINUOUS_MONITORING') {
+            addTerminalLine('decision', 'Decision Agent', `RECOMMENDATION: ${action}`, isCritical);
+        }
     }
 }
 
@@ -946,5 +1029,97 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 30000);
 
+    // Initialize worker dots on the plant map
+    initWorkers();
+
     console.log('✅ SentinelSafe Dashboard Ready');
 });
+
+// ─── Innovative Additions: Workers & Terminal ──────────────────────────────────
+function initWorkers() {
+    state.workers = [];
+    ZONE_IDS.forEach(zoneId => {
+        const group = document.getElementById(`zone-${zoneId}`);
+        if (!group) return;
+
+        // Bounding box of the zone rect
+        const rect = group.querySelector('.zone-rect');
+        if (!rect) return;
+
+        const x = parseFloat(rect.getAttribute('x'));
+        const y = parseFloat(rect.getAttribute('y'));
+        const w = parseFloat(rect.getAttribute('width'));
+        const h = parseFloat(rect.getAttribute('height'));
+
+        // Add 3 random workers per zone
+        for (let i = 0; i < 3; i++) {
+            const wx = x + 20 + Math.random() * (w - 40);
+            const wy = y + 40 + Math.random() * (h - 60);
+
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", wx);
+            circle.setAttribute("cy", wy);
+            circle.setAttribute("r", "3");
+            circle.setAttribute("class", "worker-dot safe");
+            group.appendChild(circle);
+
+            state.workers.push({
+                element: circle,
+                x: wx, y: wy,
+                minX: x + 10, maxX: x + w - 10,
+                minY: y + 30, maxY: y + h - 10,
+                targetX: wx, targetY: wy
+            });
+        }
+    });
+
+    // Start animation loop
+    requestAnimationFrame(animateWorkers);
+}
+
+function animateWorkers() {
+    state.workers.forEach(w => {
+        // Occasionally pick a new target
+        if (Math.random() < 0.02) {
+            w.targetX = w.minX + Math.random() * (w.maxX - w.minX);
+            w.targetY = w.minY + Math.random() * (w.maxY - w.minY);
+        }
+
+        // Move towards target smoothly
+        const dx = w.targetX - w.x;
+        const dy = w.targetY - w.y;
+        w.x += dx * 0.05;
+        w.y += dy * 0.05;
+
+        w.element.setAttribute('cx', w.x);
+        w.element.setAttribute('cy', w.y);
+    });
+    requestAnimationFrame(animateWorkers);
+}
+
+function addTerminalLine(agentClass, agentName, text, isCritical = false) {
+    const terminal = document.getElementById('agentTerminal');
+    if (!terminal) return;
+
+    const msgKey = `${agentClass}-${text}`;
+    if (state.lastTerminalMsg === msgKey) return; // Prevent spam
+    state.lastTerminalMsg = msgKey;
+
+    const line = document.createElement('div');
+    line.className = `terminal-line ${agentClass} ${isCritical ? 'critical' : ''}`;
+    
+    const now = new Date();
+    const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+    line.innerHTML = `<span class="timestamp">[${ts}]</span><span class="agent-name">[${agentName}]</span> ${text}`;
+    terminal.appendChild(line);
+
+    // Auto scroll
+    terminal.scrollTop = terminal.scrollHeight;
+    
+    // Limit lines
+    while (terminal.children.length > 20) {
+        terminal.removeChild(terminal.firstChild);
+    }
+}
+
