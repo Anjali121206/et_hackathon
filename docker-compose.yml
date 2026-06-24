@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+  api:
+    build: .
+    container_name: sentinelsafe_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://postgres:safe_password_2026@db:5432/sentinelsafe
+      - REDIS_HOST=redis
+      - HOST=0.0.0.0
+      
   db:
     image: postgis/postgis:16-3.4
     container_name: sentinelsafe_db

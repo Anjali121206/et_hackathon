@@ -14,8 +14,10 @@ Endpoints:
     WS   /ws                  — WebSocket for real-time dashboard updates
 """
 
+import os
 import json
 import asyncio
+import random
 from datetime import datetime
 from typing import List, Set
 from contextlib import asynccontextmanager
@@ -99,8 +101,44 @@ async def lifespan(app: FastAPI):
         "agent": "System"
     })
     
+    task = asyncio.create_task(realtime_simulator())
+    
     yield
+    
+    task.cancel()
     print("[STOP] SentinelSafe Platform Shutting Down...")
+
+
+async def realtime_simulator():
+    """Background task to simulate real-time telemetry across zones."""
+    zone_ids = [
+        "ZONE_COKE_OVEN_04", "ZONE_BF_02", "ZONE_SMS_01",
+        "ZONE_ROLLING_03", "ZONE_GAS_HOLDER", "ZONE_POWER_PLANT"
+    ]
+    
+    await asyncio.sleep(5)  # Wait for startup
+    print("[*] Real-time telemetry simulator started.")
+    
+    while True:
+        try:
+            for zone_id in zone_ids:
+                # Add slight random walk to baseline values
+                payload = SCADAPayload(
+                    sensor_id=f"SCADA_{zone_id}",
+                    zone_id=zone_id,
+                    carbon_monoxide_ppm=round(random.uniform(2.0, 15.0), 2),
+                    methane_percentage_lel=round(random.uniform(0.0, 8.0), 2),
+                    ambient_temperature_celsius=round(random.uniform(30.0, 42.0), 1),
+                    pressure_bar=round(random.uniform(1.0, 1.1), 2)
+                )
+                await submit_telemetry(payload)
+                await asyncio.sleep(0.5)  # Stagger updates slightly
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            print(f"[WARN] Simulator error: {e}")
+            
+        await asyncio.sleep(3)  # Loop every 3 seconds
 
 
 # ─── FastAPI App ───────────────────────────────────────────────────────────────
@@ -114,7 +152,8 @@ app = FastAPI(
 
 # Redis connection (with graceful fallback)
 try:
-    r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    redis_host = os.getenv("REDIS_HOST", "localhost")
+    r = redis.Redis(host=redis_host, port=6379, db=0, decode_responses=True)
     r.ping()
     print("[OK] Redis connected.")
 except Exception:
