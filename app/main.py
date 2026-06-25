@@ -260,6 +260,7 @@ async def submit_telemetry(payload: SCADAPayload):
         "telemetry_risk": payload.methane_percentage_lel,
         "permit_factor": p_factor,
         "vision_factor": v_factor,
+        "personnel_risk": 0.0,
         "computed_dri": 0.0,
         "critical_flag": False,
         "recommended_action": "",

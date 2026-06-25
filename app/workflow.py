@@ -12,6 +12,7 @@ decision engine fuses all signals into a compound risk assessment.
 from typing import TypedDict
 from langgraph.graph import StateGraph, END
 from app.risk_engine import calculate_dynamic_risk_index
+from app.hr_database import get_personnel_in_zone
 
 
 class SafetyState(TypedDict):
@@ -20,6 +21,7 @@ class SafetyState(TypedDict):
     telemetry_risk: float       # Raw LEL percentage from SCADA
     permit_factor: float        # Operational risk from permit context
     vision_factor: float        # Visual compliance risk from CCTV
+    personnel_risk: float       # Fatigue & authorization risk from HR DB
     computed_dri: float         # Final Dynamic Risk Index
     critical_flag: bool         # Emergency threshold crossed
     recommended_action: str     # Orchestrated response action
@@ -94,16 +96,50 @@ def eval_vision(state: SafetyState) -> dict:
     return {"vision_factor": v_factor, "agent_trace": trace}
 
 
+def eval_personnel(state: SafetyState) -> dict:
+    """
+    AGENT 4: Personnel Intelligence Agent
+    Cross-references current personnel in the zone with the HR Database.
+    Detects worker fatigue (> 10 hours) or unauthorized roles in hazardous zones.
+    """
+    personnel = get_personnel_in_zone(state['zone_id'])
+    trace = state.get('agent_trace', '')
+    
+    hr_risk = 0.0
+    fatigue_count = 0
+    unauthorized = False
+    
+    for worker in personnel:
+        if worker["hours_worked"] >= 10.0:
+            fatigue_count += 1
+            hr_risk += 0.3
+        
+        # If permit factor is high, and a non-certified worker is here
+        if state['permit_factor'] > 0.5 and worker["role"] in ["Clerk", "Admin"]:
+            unauthorized = True
+            hr_risk += 0.6
+            
+    hr_risk = min(1.0, hr_risk)
+    
+    msg = f" → [PersonnelAgent] {len(personnel)} workers. Fatigue: {fatigue_count}."
+    if unauthorized:
+        msg += " UNAUTHORIZED ROLE DETECTED."
+    
+    trace += msg
+    return {"personnel_risk": hr_risk, "agent_trace": trace}
+
+
 def decision_engine(state: SafetyState) -> dict:
     """
-    AGENT 4: Decision Engine
+    AGENT 5: Decision Engine
     Fuses all agent outputs into a final compound risk assessment
     and determines the appropriate orchestrated response.
     """
     dri = calculate_dynamic_risk_index(
         state['telemetry_risk'],
         state['permit_factor'],
-        state['vision_factor']
+        state['vision_factor'],
+        state.get('personnel_risk', 0.0)
     )
     
     critical = False
@@ -140,12 +176,14 @@ workflow = StateGraph(SafetyState)
 workflow.add_node("eval_telemetry", eval_telemetry)
 workflow.add_node("eval_permits", eval_permits)
 workflow.add_node("eval_vision", eval_vision)
+workflow.add_node("eval_personnel", eval_personnel)
 workflow.add_node("decision_engine", decision_engine)
 
 workflow.set_entry_point("eval_telemetry")
 workflow.add_edge("eval_telemetry", "eval_permits")
 workflow.add_edge("eval_permits", "eval_vision")
-workflow.add_edge("eval_vision", "decision_engine")
+workflow.add_edge("eval_vision", "eval_personnel")
+workflow.add_edge("eval_personnel", "decision_engine")
 workflow.add_edge("decision_engine", END)
 
 safety_orchestrator = workflow.compile()

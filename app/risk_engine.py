@@ -4,17 +4,19 @@ Dynamic Risk Index (DRI) Engine
 Computes a weighted compound risk score from multiple safety dimensions.
 
 Formula:
-    DRI = (W_s × S_anomaly) + (W_p × P_factor) + (W_v × V_factor)
+    DRI = (W_s × S_anomaly) + (W_p × P_factor) + (W_v × V_factor) + (W_hr × HR_factor)
     
 Where:
     S_anomaly = Normalized sensor/telemetry risk [0.0 - 1.0]
     P_factor  = Permit-to-work operational risk factor [0.0 - 1.0]
     V_factor  = Visual compliance risk from CCTV analytics [0.0 - 1.0]
+    HR_factor = Personnel fatigue & authorization risk [0.0 - 1.0]
 
 Weights:
-    W_s = 0.50 (50% — sensor anomaly is primary signal)
-    W_p = 0.30 (30% — operational context from permits)
+    W_s = 0.40 (40% — sensor anomaly is primary signal)
+    W_p = 0.25 (25% — operational context from permits)
     W_v = 0.20 (20% — visual compliance from CCTV)
+    W_hr = 0.15 (15% — HR shift and fatigue data)
 
 Thresholds:
     DRI >= 0.85 → CRITICAL: Emergency evacuation & shutdown
@@ -24,33 +26,34 @@ Thresholds:
 """
 
 
-def calculate_dynamic_risk_index(s_anomaly: float, p_factor: float, v_factor: float) -> float:
+def calculate_dynamic_risk_index(s_anomaly: float, p_factor: float, v_factor: float, hr_factor: float = 0.0) -> float:
     """
-    Calculate the Dynamic Risk Index from three safety dimensions.
+    Calculate the Dynamic Risk Index from four safety dimensions.
     
     Args:
         s_anomaly: Normalized sensor anomaly score [0.0 - 1.0]
         p_factor: Permit operational risk factor [0.0 - 1.0]
         v_factor: Visual compliance factor [0.0 - 1.0]
+        hr_factor: Personnel fatigue/authorization factor [0.0 - 1.0]
     
     Returns:
         DRI value clamped between 0.0 and 1.0
     """
     # Formula weights
-    w_s, w_p, w_v = 0.50, 0.30, 0.20
+    w_s, w_p, w_v, w_hr = 0.40, 0.25, 0.20, 0.15
 
     # Non-linear amplification for compound risk:
     # When multiple factors are elevated simultaneously, the risk
     # compounds faster than a linear model would suggest.
     compound_bonus = 0.0
-    elevated_count = sum(1 for f in [s_anomaly, p_factor, v_factor] if f > 0.3)
+    elevated_count = sum(1 for f in [s_anomaly, p_factor, v_factor, hr_factor] if f > 0.3)
     if elevated_count >= 3:
-        compound_bonus = 0.10  # All three factors elevated = extra 10%
+        compound_bonus = 0.10  # Three+ factors elevated = extra 10%
     elif elevated_count >= 2:
         compound_bonus = 0.05  # Two factors elevated = extra 5%
 
     # Calculate weighted DRI with compound risk bonus
-    dri = (w_s * s_anomaly) + (w_p * p_factor) + (w_v * v_factor) + compound_bonus
+    dri = (w_s * s_anomaly) + (w_p * p_factor) + (w_v * v_factor) + (w_hr * hr_factor) + compound_bonus
 
     # Clamp between 0.0 and 1.0
     return max(0.0, min(1.0, dri))
