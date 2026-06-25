@@ -1,0 +1,36 @@
+{
+    "zones": [
+        {
+            "id": "ZONE_ASSEMBLY_LINE_A",
+            "name": "Assembly Line Alpha",
+            "x": 60,
+            "y": 80,
+            "width": 300,
+            "height": 150
+        },
+        {
+            "id": "ZONE_CHEMICAL_STORAGE",
+            "name": "Chemical Storage Facility",
+            "x": 420,
+            "y": 80,
+            "width": 250,
+            "height": 150
+        },
+        {
+            "id": "ZONE_TESTING_LAB",
+            "name": "Quality Testing Lab",
+            "x": 60,
+            "y": 280,
+            "width": 200,
+            "height": 160
+        },
+        {
+            "id": "ZONE_PACKAGING_UNIT",
+            "name": "Automated Packaging Unit",
+            "x": 300,
+            "y": 280,
+            "width": 370,
+            "height": 160
+        }
+    ]
+}

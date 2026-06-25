@@ -22,7 +22,7 @@ from datetime import datetime
 from typing import List, Set
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import redis
@@ -76,6 +76,35 @@ def add_event(event: dict):
     if len(event_history) > MAX_EVENTS:
         event_history.pop()
 
+
+# ─── Dynamic Layout Configuration ──────────────────────────────────────────────
+
+LAYOUT_FILE = "layout.json"
+DEFAULT_LAYOUT = {
+    "zones": [
+        { "id": "ZONE_COKE_OVEN_04", "name": "COKE OVEN BATTERY #4", "x": 50, "y": 60, "width": 220, "height": 170 },
+        { "id": "ZONE_BF_02", "name": "BLAST FURNACE #2", "x": 290, "y": 60, "width": 220, "height": 170 },
+        { "id": "ZONE_SMS_01", "name": "STEEL MELTING SHOP #1", "x": 530, "y": 60, "width": 230, "height": 170 },
+        { "id": "ZONE_ROLLING_03", "name": "ROLLING MILL #3", "x": 50, "y": 260, "width": 220, "height": 190 },
+        { "id": "ZONE_GAS_HOLDER", "name": "GAS HOLDER STATION", "x": 290, "y": 260, "width": 220, "height": 190 },
+        { "id": "ZONE_POWER_PLANT", "name": "CAPTIVE POWER PLANT", "x": 530, "y": 260, "width": 230, "height": 190 }
+    ]
+}
+
+def get_layout():
+    if not os.path.exists(LAYOUT_FILE):
+        with open(LAYOUT_FILE, "w") as f:
+            json.dump(DEFAULT_LAYOUT, f, indent=4)
+        return DEFAULT_LAYOUT
+    try:
+        with open(LAYOUT_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return DEFAULT_LAYOUT
+
+def save_layout(layout_data):
+    with open(LAYOUT_FILE, "w") as f:
+        json.dump(layout_data, f, indent=4)
 
 # ─── Application Lifecycle ─────────────────────────────────────────────────────
 
@@ -419,6 +448,37 @@ async def get_spatial_violations():
         return {"error": str(e), "violations": []}
 
 
+# ─── Configuration Endpoints ───────────────────────────────────────────────────
+
+@app.get("/api/config/layout")
+async def api_get_layout():
+    return get_layout()
+
+@app.post("/api/config/layout")
+async def api_post_layout(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        data = json.loads(contents)
+        if "zones" not in data:
+            raise HTTPException(status_code=400, detail="Invalid layout format. Missing 'zones' array.")
+        save_layout(data)
+        return {"status": "success", "message": "Layout updated successfully"}
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON file")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── Serve Static Frontend ────────────────────────────────────────────────────
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+async def serve_dashboard():
+    return FileResponse("static/index.html")
+
+
 # ─── WebSocket Endpoint ───────────────────────────────────────────────────────
 
 @app.websocket("/ws")
@@ -457,14 +517,3 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_json({"type": "pong"})
     except WebSocketDisconnect:
         manager.disconnect(websocket)
-
-
-# ─── Serve Static Frontend ────────────────────────────────────────────────────
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-@app.get("/")
-async def serve_dashboard():
-    """Serve the main dashboard."""
-    return FileResponse("static/index.html")

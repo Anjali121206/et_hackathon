@@ -25,19 +25,181 @@ const state = {
     lastTerminalMsg: ''
 };
 
-const ZONE_IDS = [
-    'ZONE_COKE_OVEN_04', 'ZONE_BF_02', 'ZONE_SMS_01',
-    'ZONE_ROLLING_03', 'ZONE_GAS_HOLDER', 'ZONE_POWER_PLANT'
-];
+let ZONE_IDS = [];
+let ZONE_NAMES = {};
 
-const ZONE_NAMES = {
-    'ZONE_COKE_OVEN_04': 'Coke Oven Battery #4',
-    'ZONE_BF_02': 'Blast Furnace #2',
-    'ZONE_SMS_01': 'Steel Melting Shop #1',
-    'ZONE_ROLLING_03': 'Rolling Mill #3',
-    'ZONE_GAS_HOLDER': 'Gas Holder Station',
-    'ZONE_POWER_PLANT': 'Captive Power Plant'
-};
+// ─── Dynamic Layout Initialization ─────────────────────────────────────────────
+async function fetchLayout() {
+    try {
+        const res = await fetch('/api/config/layout');
+        const data = await res.json();
+        renderPlantLayout(data.zones);
+    } catch (e) {
+        console.error("Failed to load layout:", e);
+    }
+}
+
+function renderPlantLayout(zones) {
+    const container = document.getElementById('dynamicZonesContainer');
+    if (!container) return;
+    
+    // Clear existing
+    container.innerHTML = '';
+    ZONE_IDS = [];
+    ZONE_NAMES = {};
+
+    zones.forEach(zone => {
+        ZONE_IDS.push(zone.id);
+        ZONE_NAMES[zone.id] = zone.name;
+
+        // Create group
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", "zone-group");
+        g.setAttribute("id", `zone-${zone.id}`);
+        g.setAttribute("data-zone", zone.id);
+
+        // Main rect
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", zone.x);
+        rect.setAttribute("y", zone.y);
+        rect.setAttribute("width", zone.width);
+        rect.setAttribute("height", zone.height);
+        rect.setAttribute("rx", "6");
+        rect.setAttribute("class", "zone-rect");
+        rect.setAttribute("fill", "rgba(0,255,136,0.08)");
+        rect.setAttribute("stroke", "#00ff88");
+        rect.setAttribute("stroke-width", "1.5");
+        g.appendChild(rect);
+
+        // Header rect
+        const header = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        header.setAttribute("x", zone.x);
+        header.setAttribute("y", zone.y);
+        header.setAttribute("width", zone.width);
+        header.setAttribute("height", "28");
+        header.setAttribute("rx", "6");
+        header.setAttribute("fill", "rgba(0,255,136,0.15)");
+        g.appendChild(header);
+
+        // Title
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", zone.x + (zone.width / 2));
+        text.setAttribute("y", zone.y + 19);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("fill", "#00ff88");
+        text.setAttribute("font-size", "11");
+        text.setAttribute("font-weight", "600");
+        text.setAttribute("font-family", "Inter");
+        text.textContent = zone.name;
+        g.appendChild(text);
+
+        // DRI Value
+        const driText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        driText.setAttribute("x", zone.x + zone.width - 20);
+        driText.setAttribute("y", zone.y + zone.height - 10);
+        driText.setAttribute("text-anchor", "end");
+        driText.setAttribute("class", "zone-dri-text");
+        driText.setAttribute("fill", "#00ff88");
+        driText.setAttribute("font-size", "22");
+        driText.setAttribute("font-weight", "700");
+        driText.setAttribute("font-family", "JetBrains Mono");
+        driText.textContent = "0.00";
+        g.appendChild(driText);
+
+        const driLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        driLabel.setAttribute("x", zone.x + zone.width - 20);
+        driLabel.setAttribute("y", zone.y + zone.height - 30);
+        driLabel.setAttribute("text-anchor", "end");
+        driLabel.setAttribute("fill", "#4a6a8a");
+        driLabel.setAttribute("font-size", "9");
+        driLabel.setAttribute("font-family", "Inter");
+        driLabel.textContent = "DRI";
+        g.appendChild(driLabel);
+
+        // Add some dummy equipment rects to make it look industrial
+        const eq1 = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        eq1.setAttribute("x", zone.x + 20);
+        eq1.setAttribute("y", zone.y + 50);
+        eq1.setAttribute("width", "40");
+        eq1.setAttribute("height", "40");
+        eq1.setAttribute("rx", "3");
+        eq1.setAttribute("fill", "rgba(0,255,136,0.06)");
+        eq1.setAttribute("stroke", "#1e3a5f");
+        g.appendChild(eq1);
+
+        // Add sensor node
+        const sNode = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        sNode.setAttribute("cx", zone.x + 40);
+        sNode.setAttribute("cy", zone.y + zone.height - 30);
+        sNode.setAttribute("r", "8");
+        sNode.setAttribute("fill", "rgba(0,255,136,0.2)");
+        sNode.setAttribute("stroke", "#00ff88");
+        g.appendChild(sNode);
+
+        container.appendChild(g);
+    });
+
+    // Re-initialize workers now that the layout exists
+    initWorkers();
+    
+    // Add event listeners for tooltips
+    document.querySelectorAll('.zone-group').forEach(group => {
+        group.addEventListener('click', (e) => {
+            const zoneId = group.getAttribute('data-zone');
+            showTooltip(e, zoneId);
+        });
+        group.addEventListener('mousemove', (e) => {
+            if (state.selectedZone) {
+                const tooltip = document.getElementById('zoneTooltip');
+                if (tooltip && tooltip.classList.contains('active')) {
+                    tooltip.style.left = `${e.pageX + 15}px`;
+                    tooltip.style.top = `${e.pageY + 15}px`;
+                }
+            }
+        });
+        group.addEventListener('mouseleave', () => {
+            hideTooltip();
+        });
+    });
+}
+
+// Layout Upload Handler
+document.addEventListener('DOMContentLoaded', () => {
+    fetchLayout();
+
+    const uploadBtn = document.getElementById('uploadLayoutBtn');
+    const uploadInput = document.getElementById('layoutUploadInput');
+
+    if (uploadBtn && uploadInput) {
+        uploadBtn.addEventListener('click', () => uploadInput.click());
+        uploadInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                uploadBtn.textContent = "Uploading...";
+                const res = await fetch('/api/config/layout', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    await fetchLayout();
+                    uploadBtn.textContent = "Upload Config";
+                } else {
+                    alert("Failed to upload config.");
+                    uploadBtn.textContent = "Upload Config";
+                }
+            } catch (err) {
+                console.error(err);
+                uploadBtn.textContent = "Upload Config";
+            }
+        });
+    }
+});
 
 // ─── Clock ────────────────────────────────────────────────────────────────────
 function updateClock() {

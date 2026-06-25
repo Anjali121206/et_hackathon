@@ -120,7 +120,18 @@
                         </svg>
                         Plant Safety Heatmap
                     </h2>
-                    <span class="card-badge live">LIVE</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="file" id="layoutUploadInput" style="display: none;" accept=".json">
+                        <button id="uploadLayoutBtn" class="upload-btn" title="Upload Custom Layout JSON">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            Upload Config
+                        </button>
+                        <span class="card-badge live">LIVE</span>
+                    </div>
                 </div>
                 <div class="plant-layout" id="plantLayout">
                     <!-- SVG Plant Map -->
@@ -147,94 +158,10 @@
                         
                         <!-- Plant boundary -->
                         <rect x="30" y="30" width="740" height="440" rx="8" fill="none" stroke="#1e3a5f" stroke-width="1.5" stroke-dasharray="8,4"/>
-                        <text x="400" y="22" text-anchor="middle" fill="#3a5a7c" font-size="11" font-family="Inter">VISAKHAPATNAM STEEL PLANT — SAFETY OVERLAY</text>
+                        <text x="400" y="22" text-anchor="middle" fill="#3a5a7c" font-size="11" font-family="Inter">INDUSTRIAL PLANT — SAFETY OVERLAY</text>
 
-                        <!-- Zone: Coke Oven Battery #4 -->
-                        <g class="zone-group" id="zone-ZONE_COKE_OVEN_04" data-zone="ZONE_COKE_OVEN_04">
-                            <rect x="50" y="60" width="220" height="170" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
-                            <rect x="50" y="60" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
-                            <text x="160" y="79" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">COKE OVEN BATTERY #4</text>
-                            <!-- Equipment icons -->
-                            <rect x="70" y="110" width="40" height="50" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="125" y="100" width="35" height="60" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="175" y="115" width="45" height="45" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <circle cx="90" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
-                            <text x="90" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S1</text>
-                            <circle cx="160" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
-                            <text x="160" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S2</text>
-                            <!-- DRI Display -->
-                            <text x="240" y="220" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
-                            <text x="240" y="200" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
-                        </g>
-
-                        <!-- Zone: Blast Furnace #2 -->
-                        <g class="zone-group" id="zone-ZONE_BF_02" data-zone="ZONE_BF_02">
-                            <rect x="290" y="60" width="220" height="170" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
-                            <rect x="290" y="60" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
-                            <text x="400" y="79" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">BLAST FURNACE #2</text>
-                            <circle x="320" cy="150" r="30" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1" cx="370"/>
-                            <circle cx="440" cy="150" r="25" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1"/>
-                            <circle cx="330" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
-                            <text x="330" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S3</text>
-                            <text x="480" y="220" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
-                            <text x="480" y="200" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
-                        </g>
-
-                        <!-- Zone: Steel Melting Shop #1 -->
-                        <g class="zone-group" id="zone-ZONE_SMS_01" data-zone="ZONE_SMS_01">
-                            <rect x="530" y="60" width="230" height="170" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
-                            <rect x="530" y="60" width="230" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
-                            <text x="645" y="79" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">STEEL MELTING SHOP #1</text>
-                            <rect x="555" y="110" width="60" height="40" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="635" y="105" width="50" height="50" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="700" y="115" width="40" height="35" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <circle cx="580" cy="200" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
-                            <text x="580" y="204" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S4</text>
-                            <text x="730" y="220" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
-                            <text x="730" y="200" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
-                        </g>
-
-                        <!-- Zone: Rolling Mill #3 -->
-                        <g class="zone-group" id="zone-ZONE_ROLLING_03" data-zone="ZONE_ROLLING_03">
-                            <rect x="50" y="260" width="220" height="190" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
-                            <rect x="50" y="260" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
-                            <text x="160" y="279" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">ROLLING MILL #3</text>
-                            <rect x="70" y="310" width="180" height="20" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="70" y="340" width="180" height="20" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="70" y="370" width="180" height="20" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <circle cx="90" cy="420" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
-                            <text x="90" y="424" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S5</text>
-                            <text x="240" y="430" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
-                            <text x="240" y="410" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
-                        </g>
-
-                        <!-- Zone: Gas Holder Station -->
-                        <g class="zone-group" id="zone-ZONE_GAS_HOLDER" data-zone="ZONE_GAS_HOLDER">
-                            <rect x="290" y="260" width="220" height="190" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
-                            <rect x="290" y="260" width="220" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
-                            <text x="400" y="279" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">GAS HOLDER STATION</text>
-                            <circle cx="360" cy="360" r="40" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1"/>
-                            <circle cx="440" cy="370" r="30" fill="rgba(0,255,136,0.04)" stroke="#1e3a5f" stroke-width="1"/>
-                            <circle cx="330" cy="420" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
-                            <text x="330" y="424" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S6</text>
-                            <text x="480" y="430" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
-                            <text x="480" y="410" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
-                        </g>
-
-                        <!-- Zone: Captive Power Plant -->
-                        <g class="zone-group" id="zone-ZONE_POWER_PLANT" data-zone="ZONE_POWER_PLANT">
-                            <rect x="530" y="260" width="230" height="190" rx="6" class="zone-rect" fill="rgba(0,255,136,0.08)" stroke="#00ff88" stroke-width="1.5"/>
-                            <rect x="530" y="260" width="230" height="28" rx="6" fill="rgba(0,255,136,0.15)"/>
-                            <text x="645" y="279" text-anchor="middle" fill="#00ff88" font-size="11" font-weight="600" font-family="Inter">CAPTIVE POWER PLANT</text>
-                            <rect x="555" y="310" width="30" height="80" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="600" y="320" width="30" height="70" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="645" y="315" width="30" height="75" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <rect x="690" y="325" width="30" height="65" rx="3" fill="rgba(0,255,136,0.06)" stroke="#1e3a5f" stroke-width="1"/>
-                            <circle cx="580" cy="420" r="8" fill="rgba(0,255,136,0.2)" stroke="#00ff88" stroke-width="1"/>
-                            <text x="580" y="424" text-anchor="middle" fill="#00ff88" font-size="8" font-family="JetBrains Mono">S7</text>
-                            <text x="730" y="430" text-anchor="end" class="zone-dri-text" fill="#00ff88" font-size="22" font-weight="700" font-family="JetBrains Mono">0.00</text>
-                            <text x="730" y="410" text-anchor="end" fill="#4a6a8a" font-size="9" font-family="Inter">DRI</text>
-                        </g>
+                        <!-- Dynamic Zones will be injected here by app.js -->
+                        <g id="dynamicZonesContainer"></g>
                     </svg>
                 </div>
             </section>

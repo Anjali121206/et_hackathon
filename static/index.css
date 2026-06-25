@@ -895,6 +895,35 @@ body {
     margin-bottom: 20px;
 }
 
+.plant-layout {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: var(--bg-surface);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.upload-btn {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--neon-cyan);
+    border: 1px solid var(--neon-cyan);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+    background: rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
 .sim-step {
     display: flex;
     align-items: center;
