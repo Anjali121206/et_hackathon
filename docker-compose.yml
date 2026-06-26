@@ -11,11 +11,31 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      erp_service:
+        condition: service_started
+      cv_service:
+        condition: service_started
     environment:
       - DATABASE_URL=postgresql://postgres:safe_password_2026@db:5432/sentinelsafe
       - REDIS_HOST=redis
       - HOST=0.0.0.0
+      - ERP_SERVICE_URL=http://erp_service:8001
+      - CV_SERVICE_URL=http://cv_service:8002
       
+  erp_service:
+    build: .
+    container_name: sentinelsafe_erp
+    ports:
+      - "8001:8001"
+    command: ["uvicorn", "services.erp_service:app", "--host", "0.0.0.0", "--port", "8001"]
+
+  cv_service:
+    build: .
+    container_name: sentinelsafe_cv
+    ports:
+      - "8002:8002"
+    command: ["uvicorn", "services.cv_service:app", "--host", "0.0.0.0", "--port", "8002"]
+
   db:
     image: postgis/postgis:16-3.4
     container_name: sentinelsafe_db

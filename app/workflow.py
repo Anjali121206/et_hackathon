@@ -9,11 +9,15 @@ Each agent independently evaluates its safety dimension, and the
 decision engine fuses all signals into a compound risk assessment.
 """
 
+import os
 import requests
 from typing import TypedDict
 from langgraph.graph import StateGraph, END
 from app.risk_engine import calculate_dynamic_risk_index
 from app.rule_engine import get_rules
+
+ERP_SERVICE_URL = os.getenv("ERP_SERVICE_URL", "http://localhost:8001")
+CV_SERVICE_URL = os.getenv("CV_SERVICE_URL", "http://localhost:8002")
 
 
 class SafetyState(TypedDict):
@@ -89,9 +93,9 @@ def eval_vision(state: SafetyState) -> dict:
     rules = get_rules()
     vision_mult = rules.get("vision_multiplier", 1.2)
     
-    # Query CV Microservice on Port 8002
+    # Query CV Microservice
     try:
-        response = requests.get(f"http://localhost:8002/api/cv/analytics/{state['zone_id']}", timeout=2.0)
+        response = requests.get(f"{CV_SERVICE_URL}/api/cv/analytics/{state['zone_id']}", timeout=2.0)
         if response.status_code == 200:
             data = response.json()
             analytics = data.get("analytics", {})
@@ -137,9 +141,9 @@ def eval_personnel(state: SafetyState) -> dict:
     fatigue_count = 0
     unauthorized = False
     
-    # Query ERP Microservice on Port 8001
+    # Query ERP Microservice
     try:
-        response = requests.get(f"http://localhost:8001/api/erp/personnel/{state['zone_id']}", timeout=2.0)
+        response = requests.get(f"{ERP_SERVICE_URL}/api/erp/personnel/{state['zone_id']}", timeout=2.0)
         if response.status_code == 200:
             data = response.json()
             personnel = data.get("personnel", [])

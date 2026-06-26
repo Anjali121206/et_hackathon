@@ -86,6 +86,13 @@ Because SentinelSafe utilizes a true **Distributed Microservice Architecture**, 
    # Start Main Orchestrator (Port 8000)
    uvicorn app.main:app --port 8000
    ```
+   
+   #### Using Docker Compose (Recommended for Full Stack)
+   If you have Docker installed, you can spin up the entire distributed system (including PostgreSQL with PostGIS, Redis, the Main Orchestrator, and both microservices) using a single command:
+   ```bash
+   docker-compose up --build
+   ```
+
 3. **Access the Dashboard**:
    Open your browser and navigate to `http://localhost:8000`
 
