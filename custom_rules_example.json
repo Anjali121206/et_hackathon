@@ -1,0 +1,12 @@
+{
+  "permit_multipliers": {
+    "HOT_WORK": 1.45,
+    "CONFINED_SPACE": 1.50,
+    "WORK_AT_HEIGHT": 1.30,
+    "ELECTRICAL_ISOLATION": 1.25
+  },
+  "vision_multiplier": 1.40,
+  "fatigue_threshold_hours": 8.0,
+  "fatigue_penalty": 0.40,
+  "unauthorized_penalty": 0.75
+}

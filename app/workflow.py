@@ -9,10 +9,11 @@ Each agent independently evaluates its safety dimension, and the
 decision engine fuses all signals into a compound risk assessment.
 """
 
+import requests
 from typing import TypedDict
 from langgraph.graph import StateGraph, END
 from app.risk_engine import calculate_dynamic_risk_index
-from app.hr_database import get_personnel_in_zone
+from app.rule_engine import get_rules
 
 
 class SafetyState(TypedDict):
@@ -62,16 +63,18 @@ def eval_permits(state: SafetyState) -> dict:
     AGENT 2: Permit Intelligence Agent
     Evaluates operational risk based on active permit context.
     
-    High-risk permits (HOT_WORK, CONFINED_SPACE) amplify the risk
-    factor, especially when combined with elevated sensor readings.
+    Reads dynamic multipliers from the rule engine.
     """
     p_factor = state['permit_factor']
     trace = state.get('agent_trace', '')
+    rules = get_rules()
     
-    # If telemetry risk is already elevated AND permit is high-risk,
-    # we slightly amplify the permit factor (compound risk)
+    # We apply the dynamic HOT_WORK multiplier (default 1.15) if conditions are met
+    # In a real system, permit_type would be passed in the state dict.
+    hot_work_mult = rules.get("permit_multipliers", {}).get("HOT_WORK", 1.15)
+    
     if state['telemetry_risk'] > 0.3 and p_factor > 0.5:
-        p_factor = min(1.0, p_factor * 1.15)
+        p_factor = min(1.0, p_factor * hot_work_mult)
     
     trace += f" → [PermitAgent] Factor={p_factor:.3f}"
     return {"permit_factor": p_factor, "agent_trace": trace}
@@ -80,17 +83,39 @@ def eval_permits(state: SafetyState) -> dict:
 def eval_vision(state: SafetyState) -> dict:
     """
     AGENT 3: Vision Compliance Agent
-    Evaluates safety compliance from CCTV analytics.
-    
-    PPE violations in hazardous zones significantly increase risk,
-    especially during active high-risk operations.
+    Evaluates safety compliance by querying the Computer Vision Microservice.
     """
-    v_factor = state['vision_factor']
     trace = state.get('agent_trace', '')
+    rules = get_rules()
+    vision_mult = rules.get("vision_multiplier", 1.2)
+    
+    # Query CV Microservice on Port 8002
+    try:
+        response = requests.get(f"http://localhost:8002/api/cv/analytics/{state['zone_id']}", timeout=2.0)
+        if response.status_code == 200:
+            data = response.json()
+            analytics = data.get("analytics", {})
+            violations = analytics.get("ppe_violations", [])
+            violation_count = len(violations)
+            
+            # Base vision factor calculation
+            v_factor = 0.0
+            if violation_count >= 3:
+                v_factor = 0.9
+            elif violation_count >= 2:
+                v_factor = 0.7
+            elif violation_count >= 1:
+                v_factor = 0.5
+        else:
+            v_factor = state['vision_factor'] # fallback to state
+    except requests.RequestException:
+        # Network failure, fallback to existing state data
+        v_factor = state['vision_factor']
+        trace += " [CV_SVC_TIMEOUT]"
     
     # Vision violations are more dangerous during high-risk operations
     if state['permit_factor'] > 0.5 and v_factor > 0.0:
-        v_factor = min(1.0, v_factor * 1.2)
+        v_factor = min(1.0, v_factor * vision_mult)
     
     trace += f" → [VisionAgent] Factor={v_factor:.3f}"
     return {"vision_factor": v_factor, "agent_trace": trace}
@@ -99,25 +124,40 @@ def eval_vision(state: SafetyState) -> dict:
 def eval_personnel(state: SafetyState) -> dict:
     """
     AGENT 4: Personnel Intelligence Agent
-    Cross-references current personnel in the zone with the HR Database.
-    Detects worker fatigue (> 10 hours) or unauthorized roles in hazardous zones.
+    Cross-references current personnel by querying the ERP Microservice.
     """
-    personnel = get_personnel_in_zone(state['zone_id'])
     trace = state.get('agent_trace', '')
+    rules = get_rules()
+    
+    fatigue_thresh = rules.get("fatigue_threshold_hours", 10.0)
+    fatigue_pen = rules.get("fatigue_penalty", 0.3)
+    unauth_pen = rules.get("unauthorized_penalty", 0.6)
     
     hr_risk = 0.0
     fatigue_count = 0
     unauthorized = False
     
+    # Query ERP Microservice on Port 8001
+    try:
+        response = requests.get(f"http://localhost:8001/api/erp/personnel/{state['zone_id']}", timeout=2.0)
+        if response.status_code == 200:
+            data = response.json()
+            personnel = data.get("personnel", [])
+        else:
+            personnel = []
+    except requests.RequestException:
+        # Network failure
+        personnel = []
+        trace += " [ERP_SVC_TIMEOUT]"
+    
     for worker in personnel:
-        if worker["hours_worked"] >= 10.0:
+        if worker["hours_worked"] >= fatigue_thresh:
             fatigue_count += 1
-            hr_risk += 0.3
+            hr_risk += fatigue_pen
         
-        # If permit factor is high, and a non-certified worker is here
         if state['permit_factor'] > 0.5 and worker["role"] in ["Clerk", "Admin"]:
             unauthorized = True
-            hr_risk += 0.6
+            hr_risk += unauth_pen
             
     hr_risk = min(1.0, hr_risk)
     

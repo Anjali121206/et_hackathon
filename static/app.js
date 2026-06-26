@@ -1160,6 +1160,40 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ─── Window Resize Handler ───────────────────────────────────────────────────
+const rulesUploadBtn = document.getElementById('uploadRulesBtn');
+const rulesUploadInput = document.getElementById('rulesUploadInput');
+
+if (rulesUploadBtn && rulesUploadInput) {
+    rulesUploadBtn.addEventListener('click', () => rulesUploadInput.click());
+    
+    rulesUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const json = JSON.parse(e.target.result);
+                const response = await fetch('/api/config/rules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(json)
+                });
+                
+                if (response.ok) {
+                    alert('Safety Rules updated successfully! Engine is now using dynamic rules.');
+                } else {
+                    alert('Failed to update rules. Check console.');
+                }
+            } catch (err) {
+                console.error('Error parsing rules JSON:', err);
+                alert('Invalid JSON file format.');
+            }
+        };
+        reader.readAsText(file);
+    });
+}
+
 let resizeTimer;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);

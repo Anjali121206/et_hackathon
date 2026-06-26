@@ -30,6 +30,7 @@ import redis
 from app.schemas import SCADAPayload, CCTVPayload, ActivePermit, SafetyEvent
 from app.database import init_db, execute_spatial_safety_check, update_zone_gas_level, log_incident
 from app.workflow import safety_orchestrator
+from app.rule_engine import update_rules, get_rules
 from app.risk_engine import get_risk_level
 
 
@@ -106,6 +107,10 @@ def save_layout(layout_data):
     with open(LAYOUT_FILE, "w") as f:
         json.dump(layout_data, f, indent=4)
 
+def get_zone_ids() -> List[str]:
+    layout = get_layout()
+    return [zone["id"] for zone in layout.get("zones", [])]
+
 # ─── Application Lifecycle ─────────────────────────────────────────────────────
 
 @asynccontextmanager
@@ -140,16 +145,12 @@ async def lifespan(app: FastAPI):
 
 async def realtime_simulator():
     """Background task to simulate real-time telemetry across zones."""
-    zone_ids = [
-        "ZONE_COKE_OVEN_04", "ZONE_BF_02", "ZONE_SMS_01",
-        "ZONE_ROLLING_03", "ZONE_GAS_HOLDER", "ZONE_POWER_PLANT"
-    ]
-    
     await asyncio.sleep(5)  # Wait for startup
     print("[*] Real-time telemetry simulator started.")
     
     while True:
         try:
+            zone_ids = get_zone_ids()
             for zone_id in zone_ids:
                 # Add slight random walk to baseline values
                 payload = SCADAPayload(
@@ -408,10 +409,7 @@ async def get_zone_status(zone_id: str):
 @app.get("/api/zones")
 async def get_all_zones():
     """Get status of all known zones."""
-    zone_ids = [
-        "ZONE_COKE_OVEN_04", "ZONE_BF_02", "ZONE_SMS_01",
-        "ZONE_ROLLING_03", "ZONE_GAS_HOLDER", "ZONE_POWER_PLANT"
-    ]
+    zone_ids = get_zone_ids()
     zones = []
     for zid in zone_ids:
         data = cache_get(f"dri:{zid}")
@@ -470,6 +468,30 @@ async def api_post_layout(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/config/rules")
+async def api_get_rules():
+    return get_rules()
+
+
+@app.post("/api/config/rules")
+async def api_post_rules(rules: dict):
+    try:
+        update_rules(rules)
+        add_event({
+            "timestamp": datetime.now().isoformat(),
+            "zone_id": "SYSTEM",
+            "event_type": "SYSTEM",
+            "severity": "INFO",
+            "title": "Safety Rules Updated",
+            "description": "Dynamic safety risk rules and penalties have been successfully updated.",
+            "dri": None,
+            "agent": "Regulatory Rules Engine"
+        })
+        return {"status": "success", "message": "Rules updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ─── Serve Static Frontend ────────────────────────────────────────────────────
 
 # Mount static files
@@ -490,10 +512,7 @@ async def websocket_endpoint(websocket: WebSocket):
     # Send initial state
     try:
         zones_data = []
-        zone_ids = [
-            "ZONE_COKE_OVEN_04", "ZONE_BF_02", "ZONE_SMS_01",
-            "ZONE_ROLLING_03", "ZONE_GAS_HOLDER", "ZONE_POWER_PLANT"
-        ]
+        zone_ids = get_zone_ids()
         for zid in zone_ids:
             data = cache_get(f"dri:{zid}")
             if data:

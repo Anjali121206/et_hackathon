@@ -19,12 +19,15 @@ The application follows a decoupled client-server architecture powered by a real
 et_hackathon/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py           # FastAPI server, WebSockets, Simulation loop
-│   ├── workflow.py       # LangGraph multi-agent pipeline
+│   ├── main.py           # FastAPI server (Port 8000), WebSockets, Simulation loop
+│   ├── workflow.py       # LangGraph multi-agent pipeline with HTTP clients
 │   ├── risk_engine.py    # DRI mathematical formulas and thresholds
-│   ├── hr_database.py    # Mock ERP/HR shift database
+│   ├── rule_engine.py    # Dynamic rules injection
 │   ├── database.py       # SQLAlchemy ORM models
-│   └── models.py         # Pydantic schemas
+│   └── schemas.py        # Pydantic schemas
+├── services/
+│   ├── erp_service.py    # Standalone mock SAP/HR Microservice (Port 8001)
+│   └── cv_service.py     # Standalone mock CV/YOLO Microservice (Port 8002)
 ├── static/
 │   ├── index.html        # Main dashboard UI
 │   ├── index.css         # Styling (Glassmorphism, CSS Grid)
@@ -49,8 +52,8 @@ As data moves through the pipeline, agents mutate a shared `TypedDict`:
 ### 3.2 The Agents
 1.  **Telemetry Agent**: Reads raw IoT data (Methane LEL, CO ppm). Uses piecewise-linear normalization to convert physical readings into a `0.0 - 1.0` risk scale.
 2.  **Permit Agent**: Reads from the active permit registry. Operations like `HOT_WORK` or `CONFINED_SPACE` act as direct multipliers to base risk.
-3.  **Vision Agent**: Simulates CCTV analytics. Detects PPE violations and personnel density, increasing risk if density is high near hazardous zones.
-4.  **Personnel Agent**: Cross-references the `hr_database.py`. Identifies if workers have been on shift for `> 10 hours` (Fatigue Risk) or if unauthorized roles (e.g., `Clerk`) are in a restricted zone.
+3.  **Vision Agent**: Makes HTTP requests to the CV Microservice (`http://localhost:8002`). Analyzes CCTV analytics to detect PPE violations and personnel density, increasing risk if density is high near hazardous zones.
+4.  **Personnel Agent**: Makes HTTP requests to the ERP Microservice (`http://localhost:8001`). Identifies if workers have been on shift for `> 10 hours` (Fatigue Risk) or if unauthorized roles (e.g., `Clerk`) are in a restricted zone.
 5.  **Decision Engine**: Fuses the factors, calculates the DRI, and triggers the orchestrated response.
 
 ---
@@ -80,7 +83,9 @@ If multiple safety dimensions fail simultaneously, the system escalates faster t
 *   `GET /`: Serves the static `index.html` frontend.
 *   `GET /api/config/layout`: Returns the currently active plant layout (zones and coordinates) for dynamic SVG rendering.
 *   `POST /api/config/layout`: Accepts a JSON upload to overwrite the current plant layout and restart the simulation logic.
-*   `WS /ws/safety`: Primary WebSocket endpoint streaming serialized `SafetyState` and event timelines to the frontend at ~1Hz.
+*   `GET /api/config/rules`: Returns the active safety rules, fatigue thresholds, and risk penalties.
+*   `POST /api/config/rules`: Accepts a JSON upload to dynamically update safety rules in the active engine.
+*   `WS /ws`: Primary WebSocket endpoint streaming serialized `SafetyState` and event timelines to the frontend.
 
 ---
 
@@ -93,8 +98,8 @@ The frontend (`static/app.js`) is completely agnostic to the physical layout of 
 ---
 
 ## 7. Scaling to Production
-To move this prototype to an enterprise production environment, the following architectural upgrades are required:
-1.  **Computer Vision Integration**: Replace the simulated vision JSON payloads with an edge-deployed YOLOv8 or RT-DETR model processing live RTSP camera feeds via OpenCV/GStreamer.
-2.  **LLM / RAG Integration**: Replace the hardcoded permit multipliers with a Vector Database (e.g., ChromaDB) containing regulatory documents (Factory Act, OISD). Use a LangChain Retriever to dynamically query rule compliance.
-3.  **ERP / SAP Integration**: Replace `app/hr_database.py` with secure REST/SOAP calls to a live corporate SAP HR module to retrieve real-time shift data.
+Because SentinelSafe utilizes a distributed microservice architecture, scaling to production simply involves replacing the external endpoints:
+1.  **Computer Vision Integration**: Replace `http://localhost:8002` with the IP of an edge-deployed YOLOv8 or RT-DETR model processing live RTSP camera feeds. The main orchestrator's code remains completely unchanged.
+2.  **LLM / RAG Integration**: Replace the JSON rule uploads with a Vector Database (e.g., ChromaDB) containing regulatory documents. Use a LangChain Retriever to dynamically supply the `rule_engine.py` with multipliers.
+3.  **ERP / SAP Integration**: Replace `http://localhost:8001` with the secure API gateway of a corporate SAP HR module. The personnel agent will continue fetching data flawlessly.
 4.  **Message Queueing**: Shift from `asyncio` background tasks to a robust event bus like Apache Kafka or RabbitMQ to handle millions of IoT events per second.
